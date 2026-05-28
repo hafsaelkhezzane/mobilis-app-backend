@@ -1,8 +1,13 @@
-require('dotenv').config();
-const app = require('./src/app');
+const express = require('express');
+const { connectDB } = require('./src/config/db'); // db charge déjà env.js en premier interne
+
+const app = express();
+
+connectDB();
+
+app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
-
 app.listen(PORT, () => {
-  console.log(` Serveur en cours d'exécution sur le port ${PORT} en mode ${process.env.NODE_ENV}`);
+  console.log(` Serveur backend démarré sur le port ${PORT}`);
 });
