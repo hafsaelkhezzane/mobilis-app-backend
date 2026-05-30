@@ -1,5 +1,6 @@
 const { Sequelize } = require('sequelize');
-require('./env');
+// Charge le fichier .env situé à la racine du projet backend
+require('dotenv').config(); 
 
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'mobilisapp_db',
