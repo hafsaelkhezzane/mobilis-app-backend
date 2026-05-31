@@ -1,5 +1,4 @@
 const { Sequelize } = require('sequelize');
-// Charge le fichier .env situé à la racine du projet backend
 require('dotenv').config(); 
 
 const sequelize = new Sequelize(

@@ -1,11 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
+const authMiddleware = require('../middlewares/auth.middleware'); 
 
-// Route pour l'inscription : POST http://IP_PC:5000/api/auth/register
+
 router.post('/register', authController.register);
 
-// Route pour la connexion : POST http://IP_PC:5000/api/auth/login
 router.post('/login', authController.login);
+
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/verify-reset-code', authController.verifyResetCode);
+router.post('/reset-password', authController.resetPassword);
+
+router.get('/me', authMiddleware, authController.getProfile);
 
 module.exports = router;

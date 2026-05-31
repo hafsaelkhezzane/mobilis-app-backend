@@ -3,9 +3,8 @@ const cors = require('cors');
 
 const app = express();
 
-// Middlewares de base
 app.use(cors());
-app.use(express.json()); // Permet de lire le format JSON envoyé par le mobile
+app.use(express.json()); 
 
 // Route de test (Health Check)
 app.get('/api/health', (req, res) => {

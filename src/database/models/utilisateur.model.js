@@ -1,5 +1,4 @@
 const { DataTypes } = require('sequelize');
-// On remonte de deux niveaux ici aussi pour aller dans src/config/db
 const { sequelize } = require('../../config/db'); 
 
 const Utilisateur = sequelize.define('Utilisateur', {
@@ -16,15 +15,14 @@ const Utilisateur = sequelize.define('Utilisateur', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-
-    email: {
+  email: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
     validate: {
-        isEmail: true 
+      isEmail: true 
     }
-    },
+  },
   telephone: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -38,10 +36,19 @@ const Utilisateur = sequelize.define('Utilisateur', {
     type: DataTypes.ENUM('CLIENT', 'DEMENAGEUR', 'ADMIN'),
     allowNull: false,
     defaultValue: 'CLIENT',
+  },
+
+  reset_code: {
+    type: DataTypes.STRING,
+    allowNull: true, 
+  },
+  reset_code_expires: {
+    type: DataTypes.DATE,
+    allowNull: true,
   }
 }, {
- tableName: 'UTILISATEUR',
-  freezeTableName: true, // Garde le nom exact de ta table
+  tableName: 'UTILISATEUR',
+  freezeTableName: true, 
   timestamps: false 
 });
 
