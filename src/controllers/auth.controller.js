@@ -52,12 +52,29 @@ exports.login = async (req, res) => {
     const { email, mot_de_passe } = req.body;
     const emailNettoye = email.trim().toLowerCase();
 
+    console.log("--------------------------------------------------");
+    console.log(" REQUÊTE REÇUE DU TÉLÉPHONE :");
+    console.log("Email envoyé :", `"${emailNettoye}"`);
+    console.log("Mot de passe envoyé :", `"${mot_de_passe}"`);
+
     const user = await Utilisateur.findOne({ where: { email: emailNettoye } });
+    
     if (!user) {
+      console.log(" ÉCHEC : Aucun utilisateur trouvé en BDD avec cet email.");
+      console.log("--------------------------------------------------");
       return res.status(401).json({ success: false, message: "Identifiants incorrects. Veuillez réessayer." });
     }
 
+    console.log(" UTILISATEUR TROUVÉ EN BDD :");
+    console.log("Email en BDD :", `"${user.email}"`);
+    console.log("Role en BDD :", `"${user.role}"`);
+    console.log("Hash en BDD :", `"${user.mot_de_passe}"`);
+
     const isPasswordValid = await bcrypt.compare(mot_de_passe, user.mot_de_passe);
+    
+    console.log(" COMPARAISON BCRYPT :", isPasswordValid ? " VALIDE" : " INCORRECT");
+    console.log("--------------------------------------------------");
+
     if (!isPasswordValid) {
       return res.status(401).json({ success: false, message: "Identifiants incorrects. Veuillez réessayer." });
     }
@@ -81,7 +98,7 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Erreur Connexion Backend :", error);
+    console.error(" ERREUR SERVEUR :", error);
     return res.status(500).json({ success: false, message: "Erreur interne du serveur." });
   }
 };
