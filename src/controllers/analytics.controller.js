@@ -3,10 +3,8 @@ const { sequelize } = require('../config/db');
 
 exports.getAdminStats = async (req, res) => {
   try {
-    // 1. Nombre total d'utilisateurs
     const totalUsers = await Utilisateur.count();
 
-    // 2. Groupement par rôle (en minuscules d'après ta configuration)
     const rolesDistribution = await Utilisateur.findAll({
       attributes: [
         'role',
@@ -15,7 +13,6 @@ exports.getAdminStats = async (req, res) => {
       group: ['role']
     });
 
-    // Initialisation stricte basée sur tes rôles exacts
     const rolesStats = { client: 0, mover: 0, admin: 0 };
     
     rolesDistribution.forEach(item => {

@@ -16,7 +16,7 @@ const LogIa = sequelize.define('LogIa', {
     allowNull: false
   },
   json_entites_extraites: {
-    type: DataTypes.JSON, // Utilise le type JSON de MySQL pour stocker le résultat NLP
+    type: DataTypes.JSON, 
     allowNull: true
   },
   score_confiance: {
@@ -27,7 +27,6 @@ const LogIa = sequelize.define('LogIa', {
     type: DataTypes.INTEGER,
     allowNull: true
   },
-  // 📊 Colonnes de Monitoring / Analytics adaptées
   temps_reponse_ms: {
     type: DataTypes.INTEGER,
     allowNull: true
@@ -42,7 +41,7 @@ const LogIa = sequelize.define('LogIa', {
   }
 }, {
   tableName: 'LOG_IA',
-  timestamps: false // Génère createdAt et updatedAt automatiquement
+  timestamps: false 
 });
 
 module.exports = LogIa;

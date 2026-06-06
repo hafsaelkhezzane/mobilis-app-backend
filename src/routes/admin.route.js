@@ -2,10 +2,6 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database/models'); 
 
-/**
- * 1. GET /api/admin/dashboard-real
- * Récupère les compteurs globaux, les missions et les tâches pour l'agenda.
- */
 router.get('/dashboard-real', async (req, res) => {
   try {
     let totalClients = 0;
@@ -14,7 +10,6 @@ router.get('/dashboard-real', async (req, res) => {
     let missions = [];
     let taches = [];
 
-    // Récupération sécurisée des compteurs d'utilisateurs par rôle
     try {
       const [resClients] = await db.sequelize.query("SELECT COUNT(*) as total FROM utilisateur WHERE role = 'CLIENT'");
       totalClients = resClients[0].total || 0;
@@ -28,7 +23,6 @@ router.get('/dashboard-real', async (req, res) => {
       console.error("Erreur compteurs utilisateurs :", err.message);
     }
 
-    // Récupération des missions planifiées
     try {
       const [resMissions] = await db.sequelize.query(
         "SELECT id_mission AS id, date_mission AS date, statut_mission AS statut, id_demande, id_demenageur FROM mission ORDER BY date_mission ASC"
@@ -38,7 +32,6 @@ router.get('/dashboard-real', async (req, res) => {
       console.error("Erreur lecture table mission :", err.message);
     }
 
-    // Récupération des tâches de l'agenda
     try {
       const [resTaches] = await db.sequelize.query(
         "SELECT id, titre, description, date_tache AS date, statut FROM taches ORDER BY createdAt DESC"
@@ -49,7 +42,6 @@ router.get('/dashboard-real', async (req, res) => {
       taches = [];
     }
 
-    // Envoi de la réponse structurée au frontend
     return res.status(200).json({
       success: true,
       totalClients,
@@ -73,10 +65,6 @@ router.get('/dashboard-real', async (req, res) => {
   }
 });
 
-/**
- * 2. POST /api/admin/taches
- * Crée une nouvelle tâche affectée à une date précise.
- */
 router.post('/taches', async (req, res) => {
   const { titre, description, date, statut } = req.body;
 
@@ -97,10 +85,27 @@ router.post('/taches', async (req, res) => {
   }
 });
 
-/**
- * 3. PUT /api/admin/taches/:id
- * Modifie le statut d'une tâche existante ('To Do', 'In Progress', 'Done').
- */
+
+router.get('/clients-stats', async (req, res) => {
+    try {
+        const clients = await db.Utilisateur.findAll({ where: { role: 'CLIENT' } });
+
+        const stats = await db.sequelize.query(
+            "SELECT MONTH(created_at) as month, COUNT(*) as count FROM Utilisateur WHERE role = 'CLIENT' GROUP BY MONTH(created_at)",
+            { type: db.sequelize.QueryTypes.SELECT }
+        );
+        res.json({
+            success: true,
+            clients: clients,
+            stats: stats 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Erreur serveur" });
+    }
+});
+
+module.exports = router;
+
 router.put('/taches/:id', async (req, res) => {
   const { id } = req.params;
   const { statut } = req.body;
