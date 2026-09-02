@@ -5,6 +5,9 @@ const authMiddleware = require('../middlewares/auth.middleware');
 const multer = require('multer'); 
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
+const { sequelize } = require('../database/models'); 
+const { QueryTypes } = require('sequelize');
 
 // ─── CONFIGURATION DE MULTER CORRIGÉE ───
 const uploadDir = path.join(__dirname, '../../uploads/avatars');
@@ -205,6 +208,137 @@ router.get('/profile', authMiddleware, async (req, res) => {
         console.error("Erreur lors de la récupération du profil :", error);
         return res.status(500).json({ success: false, message: "Erreur serveur profil." });
     }
+});
+
+// ── PUT /api/client/mot-de-passe ──────────────────────────────────────────
+router.put('/mot-de-passe', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?.id_utilisateur || req.user?.user_id;
+    const { ancien, nouveau } = req.body;
+    if (!ancien || !nouveau || nouveau.length < 6) {
+      return res.status(400).json({ success: false, message: 'Mot de passe invalide (min. 6 caractères).' });
+    }
+
+    const [user] = await sequelize.query(
+      `SELECT mot_de_passe FROM utilisateur WHERE id_utilisateur = :id`,
+      { replacements: { id: userId }, type: QueryTypes.SELECT }
+    );
+    if (!user) return res.status(404).json({ success: false, message: 'Utilisateur introuvable.' });
+
+    const motDePasseValide = await bcrypt.compare(ancien, user.mot_de_passe);
+    if (!motDePasseValide) {
+      return res.status(401).json({ success: false, message: 'Mot de passe actuel incorrect.' });
+    }
+
+    const hash = await bcrypt.hash(nouveau, 10);
+    await sequelize.query(
+      `UPDATE utilisateur SET mot_de_passe = :hash WHERE id_utilisateur = :id`,
+      { replacements: { hash, id: userId } }
+    );
+
+    return res.json({ success: true, message: 'Mot de passe mis à jour.' });
+  } catch (e) {
+    console.error('❌ [client/mot-de-passe]', e.message);
+    return res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour du mot de passe.' });
+  }
+});
+
+router.get('/conversations', authMiddleware, async (req, res) => {
+  try {
+    const clientId = req.user?.id || req.user?.id_utilisateur || req.user?.user_id;
+
+    if (!clientId) {
+      console.error('❌ [demandes/conversations] clientId introuvable dans req.user :', req.user);
+      return res.status(401).json({ success: false, message: 'Utilisateur non identifié.' });
+    }
+
+    const conversations = await sequelize.query(
+      `SELECT m.id_mission, m.statut_mission,
+              d.id_demande, d.ville_depart, d.ville_arrivee, d.statut AS statut_demande,
+              u.id_utilisateur AS demenageur_id, u.prenom_utilisateur AS demenageur_prenom, u.nom_utilisateur AS demenageur_nom,
+              (SELECT mm.contenu FROM message_mission mm
+               WHERE mm.id_mission = m.id_mission ORDER BY mm.created_at DESC LIMIT 1) AS dernier_message,
+              (SELECT mm.created_at FROM message_mission mm
+               WHERE mm.id_mission = m.id_mission ORDER BY mm.created_at DESC LIMIT 1) AS dernier_message_at,
+              (SELECT mm.expediteur_role FROM message_mission mm
+               WHERE mm.id_mission = m.id_mission ORDER BY mm.created_at DESC LIMIT 1) AS dernier_expediteur_role,
+              (SELECT COUNT(*) FROM message_mission mm2
+               WHERE mm2.id_mission = m.id_mission AND mm2.expediteur_role = 'demenageur' AND mm2.lu = FALSE) AS non_lus
+       FROM demandes_demenagement d
+       LEFT JOIN mission m ON d.id_demande = m.id_demande
+       LEFT JOIN utilisateur u ON u.id_utilisateur = m.id_demenageur
+       WHERE d.user_id = :clientId 
+         AND (m.statut_mission IS NULL OR m.statut_mission != 'refusee')
+       ORDER BY COALESCE(
+         (SELECT mm.created_at FROM message_mission mm WHERE mm.id_mission = m.id_mission ORDER BY mm.created_at DESC LIMIT 1),
+         m.date_mission,
+         d.id_demande
+       ) DESC`,
+      { replacements: { clientId }, type: QueryTypes.SELECT }
+    );
+
+    // 🔧 log de diagnostic : à surveiller dans la console serveur au prochain test
+    console.log(`ℹ️ [demandes/conversations] clientId=${clientId} → ${conversations.length} conversation(s) trouvée(s)`);
+
+    return res.json({ success: true, conversations });
+  } catch (e) {
+    console.error('❌ [demandes/conversations]', e.message);
+    return res.status(500).json({ success: false, message: 'Erreur lors du chargement des conversations.' });
+  }
+});
+
+router.delete('/compte', authMiddleware, async (req, res) => {
+  const userId = req.user?.id || req.user?.id_utilisateur || req.user?.user_id;
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Utilisateur non authentifié.' });
+  }
+
+  const transaction = await sequelize.transaction();
+
+  try {
+    const [user] = await sequelize.query(
+      `SELECT id_utilisateur FROM utilisateur WHERE id_utilisateur = :id`,
+      { replacements: { id: userId }, type: QueryTypes.SELECT, transaction }
+    );
+
+    if (!user) {
+      await transaction.rollback();
+      return res.status(404).json({ success: false, message: 'Utilisateur introuvable.' });
+    }
+
+    await sequelize.query(
+      `DELETE FROM notifications WHERE user_id = :id`,
+      { replacements: { id: userId }, transaction }
+    );
+
+    await sequelize.query(
+      `DELETE FROM demandes_demenagement WHERE user_id = :id`,
+      { replacements: { id: userId }, transaction }
+    );
+
+    // Suppression finale du compte
+    await sequelize.query(
+      `DELETE FROM utilisateur WHERE id_utilisateur = :id`,
+      { replacements: { id: userId }, transaction }
+    );
+
+    await transaction.commit();
+
+    return res.json({ success: true, message: 'Compte supprimé définitivement.' });
+  } catch (e) {
+    await transaction.rollback();
+    console.error('❌ [client/compte DELETE]', e.message);
+
+    if (e.name === 'SequelizeForeignKeyConstraintError') {
+      return res.status(409).json({
+        success: false,
+        message: "Impossible de supprimer le compte : des données liées existent encore (factures, demandes en cours...).",
+      });
+    }
+
+    return res.status(500).json({ success: false, message: 'Erreur lors de la suppression du compte.' });
+  }
 });
 
 module.exports = router;

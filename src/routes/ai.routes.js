@@ -3,11 +3,8 @@ const router = express.Router();
 const { analyzeMovingText } = require('../controllers/ai.controller');
 const LogIa = require('../database/models/LogIa');
 
-// 💡 Juste '/analyze', le préfixe '/api/ai' est déjà géré par server.js !
 router.post('/analyze', analyzeMovingText);
 
-// 📊 Juste '/analytics' pour la même raison !
-// 📊 Route GET pour le tableau de bord Analytics & Performance
 router.get('/analytics', async (req, res) => {
   try {
     // 1. Comptages de base

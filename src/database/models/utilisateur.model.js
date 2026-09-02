@@ -37,10 +37,56 @@ const Utilisateur = sequelize.define('Utilisateur', {
     allowNull: false,
     defaultValue: 'CLIENT',
   },
-
+  adresse: {
+    type: DataTypes.STRING,
+    allowNull: true, 
+  },
+  nom_entreprise: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  numero_siret: { // <-- C'est bien numero_siret ici
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  // --- NOUVEAUX CHAMPS AJOUTÉS ---
+  type_permis: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  vehicule: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  // -------------------------------
+  ville: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  pays: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  photo_utilisateur: {
+    type: DataTypes.STRING,
+    allowNull: true, 
+  },
+  created_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: DataTypes.NOW,
+  },
   reset_code: {
     type: DataTypes.STRING,
     allowNull: true, 
+  },
+  stripe_account_id: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  stripe_onboarding_complete: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
   },
   reset_code_expires: {
     type: DataTypes.DATE,

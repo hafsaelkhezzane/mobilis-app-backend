@@ -6,9 +6,21 @@ require('dotenv').config();
 
 exports.register = async (req, res) => {
   try {
-    const { nom_utilisateur, prenom_utilisateur, email, telephone, mot_de_passe, role } = req.body;
+    // 1. Extraction des nouveaux champs (numero_siret, nom_entreprise)
+    const { 
+      nom_utilisateur, 
+      prenom_utilisateur, 
+      email, 
+      telephone, 
+      mot_de_passe, 
+      role,
+      numero_siret,
+      nom_entreprise 
+    } = req.body;
+
     const emailNettoye = email.trim().toLowerCase();
 
+    // 2. Vérifications existantes
     const emailExists = await Utilisateur.findOne({ where: { email: emailNettoye } });
     if (emailExists) {
       return res.status(400).json({ success: false, message: "Cette adresse email est déjà associée à un compte." });
@@ -19,18 +31,24 @@ exports.register = async (req, res) => {
       return res.status(400).json({ success: false, message: "Ce numéro de téléphone est déjà associé à un compte." });
     }
 
+    // 3. Hashage du mot de passe
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(mot_de_passe, saltRounds);
 
+    // 4. Création avec les nouveaux champs
+    // 4. Création avec les nouveaux champs
     const nouvelUtilisateur = await Utilisateur.create({
       nom_utilisateur,
       prenom_utilisateur,
-      email: emailNettoye, 
+      email: emailNettoye,
       telephone,
       mot_de_passe: hashedPassword,
-      role 
+      role,
+      numero_siret: numero_siret ? String(numero_siret) : null, 
+      nom_entreprise: nom_entreprise || null
     });
 
+    // 5. Réponse avec les nouvelles données incluses
     return res.status(201).json({
       success: true,
       message: "Compte créé avec succès !",
@@ -38,7 +56,9 @@ exports.register = async (req, res) => {
         id: nouvelUtilisateur.id_utilisateur,
         prenom: nouvelUtilisateur.prenom_utilisateur,
         email: nouvelUtilisateur.email,
-        role: nouvelUtilisateur.role
+        role: nouvelUtilisateur.role,
+        nom_entreprise: nouvelUtilisateur.nom_entreprise,
+        numero_siret: nouvelUtilisateur.numero_siret
       }
     });
   } catch (error) {

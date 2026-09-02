@@ -4,25 +4,34 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node server.js"
-  },
+  "start": "node server.js",
+  "dev": "node server.js",
+  "test": "echo \"Error: no test specified\" && exit 1"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
+    "axios": "^1.18.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "expo-notifications": "^57.0.3",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "multer": "^2.1.1",
-    "mysql2": "^3.22.4",
+    "multer": "^2.2.0",
+    "mysql2": "^3.22.5",
     "nodemailer": "^8.0.10",
-    "openai": "^6.39.0",
-    "sequelize": "^6.37.8"
+    "openai": "^6.49.0",
+    "pdfkit": "^0.19.1",
+    "sequelize": "^6.37.8",
+    "sharp": "^0.35.3",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "stripe": "^22.4.0"
   },
   "devDependencies": {
     "sequelize-cli": "^6.6.5"
